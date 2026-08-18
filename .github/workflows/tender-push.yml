@@ -1,0 +1,34 @@
+name: 每日標案推播
+
+on:
+  schedule:
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-tender-push
+  cancel-in-progress: false
+
+jobs:
+  push-tenders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: 寫入 Firebase 服務帳戶
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > worker/serviceAccount.json
+      - name: 查詢並推播新標案
+        env:
+          FIREBASE_SERVICE_ACCOUNT_PATH: ./serviceAccount.json
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
+        run: npm run scrape:once
