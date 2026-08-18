@@ -8,7 +8,7 @@ service cloud.firestore {
     }
 
     match /tenders/{tenderId} {
-      allow read, update: if signedInUser();
+      allow read, update, delete: if signedInUser();
     }
 
     match /notifications/{notificationId} {

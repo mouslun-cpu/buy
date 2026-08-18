@@ -1,7 +1,7 @@
 "use client";
 
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
-import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../lib/firebase";
 
@@ -40,10 +40,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 function formatMoney(value: number | null) {
   return value === null ? "未公開" : `NT$ ${value.toLocaleString("zh-TW")}`;
-}
-
-function dateKey(value: string) {
-  return value.replaceAll("/", "-");
 }
 
 export default function Home() {
@@ -100,11 +96,6 @@ export default function Home() {
     });
   }, [search, statusFilter, tenders]);
 
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(new Date());
-  const todayCount = tenders.filter((tender) => dateKey(tender.publishedAt) === today).length;
-  const pendingCount = tenders.filter((tender) => ["new", "watching", "analyzing"].includes(tender.status)).length;
-  const goCount = tenders.filter((tender) => tender.status === "go" || tender.status === "submitted").length;
-
   async function saveTender() {
     if (!selected) return;
     await updateDoc(doc(db, "tenders", selected.id), {
@@ -112,6 +103,12 @@ export default function Home() {
       statusNote: note,
       updatedAt: serverTimestamp(),
     });
+    setSelected(null);
+  }
+
+  async function deleteTender() {
+    if (!selected || !window.confirm(`確定刪除「${selected.title}」？`)) return;
+    await deleteDoc(doc(db, "tenders", selected.id));
     setSelected(null);
   }
 
@@ -150,17 +147,6 @@ export default function Home() {
 
       {showInstallHelp && <div className="install-help"><strong>加入 BuyBuyBuy</strong><span>{isIOS ? "請按 Safari 的分享按鈕，選擇「加入主畫面」。" : "請使用 Chrome 或 Edge 開啟此網址，並從瀏覽器選單選擇「安裝應用程式」。"}</span><button onClick={() => setShowInstallHelp(false)} aria-label="關閉加入主畫面說明">×</button></div>}
 
-      <section className="hero">
-        <div><p className="eyebrow">標案雷達</p><h1>推播不是終點，決策才是。</h1><p>集中查看每一筆新案，留下投與不投的理由。</p></div>
-        <div className="today"><span>今日</span><strong>{today}</strong></div>
-      </section>
-
-      <section className="metrics" aria-label="案件摘要">
-        <article><span>今日新案</span><strong>{todayCount}</strong><small>依公告日統計</small></article>
-        <article><span>待處理</span><strong>{pendingCount}</strong><small>新推播、考慮中、分析中</small></article>
-        <article><span>投標中</span><strong>{goCount}</strong><small>決定投標與已投標</small></article>
-      </section>
-
       <section className="workspace">
         <div className="workspace-heading"><div><p className="eyebrow">案件工作台</p><h2>所有推播標案</h2></div><span>{visibleTenders.length} 筆</span></div>
         <div className="filters"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜尋標案名稱、機關或案號" /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as Status | "all")}><option value="all">全部狀態</option>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></div>
@@ -168,7 +154,7 @@ export default function Home() {
         {visibleTenders.length === 0 ? <div className="empty"><strong>還沒有可顯示的標案</strong><p>下一次 Worker 推播時，案件會自動寫入這裡。</p></div> : <div className="table-wrap"><table><thead><tr><th>標案</th><th>公告／截止</th><th>預算</th><th>狀態</th><th></th></tr></thead><tbody>{visibleTenders.map((tender) => <tr key={tender.id}><td><strong>{tender.title}</strong><span>{tender.orgName} · {tender.jobNumber}</span></td><td><span>{tender.publishedAt || "—"}</span><small>截止 {tender.deadline || "未提供"}</small></td><td><strong>{formatMoney(tender.budget)}</strong><small>{tender.tenderWay}</small></td><td><span className={`status status-${tender.status}`}>{statusLabels[tender.status]}</span></td><td><button className="text-button" onClick={() => { setSelected(tender); setNote(tender.statusNote ?? ""); }}>管理</button></td></tr>)}</tbody></table></div>}
       </section>
 
-      {selected && <div className="dialog-backdrop" onMouseDown={() => setSelected(null)}><section className="dialog" onMouseDown={(event) => event.stopPropagation()}><div className="dialog-heading"><div><p className="eyebrow">案件管理</p><h2>{selected.title}</h2></div><button onClick={() => setSelected(null)}>×</button></div><a className="source-link" href={selected.sourceUrl} target="_blank" rel="noreferrer">開啟政府採購網資訊頁 ↗</a><label>案件狀態<select value={selected.status} onChange={(event) => setSelected({ ...selected, status: event.target.value as Status })}>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></label><label>決策備註<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="例如：確認人力配置後再決定是否投標" /></label><button className="primary-button" onClick={saveTender}>儲存案件狀態</button></section></div>}
+      {selected && <div className="dialog-backdrop" onMouseDown={() => setSelected(null)}><section className="dialog" onMouseDown={(event) => event.stopPropagation()}><div className="dialog-heading"><div><p className="eyebrow">案件管理</p><h2>{selected.title}</h2></div><button onClick={() => setSelected(null)}>×</button></div><a className="source-link" href={selected.sourceUrl} target="_blank" rel="noreferrer">開啟政府採購網資訊頁 ↗</a><label>案件狀態<select value={selected.status} onChange={(event) => setSelected({ ...selected, status: event.target.value as Status })}>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></label><label>決策備註<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="例如：確認人力配置後再決定是否投標" /></label><div className="dialog-actions"><button className="danger-button" onClick={deleteTender}>刪除標案</button><button className="primary-button" onClick={saveTender}>儲存案件狀態</button></div></section></div>}
     </main>
   );
 }
