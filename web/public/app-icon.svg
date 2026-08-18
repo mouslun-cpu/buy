@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">BuyBuyBuy 政府標案工作台</title>
+  <desc id="desc">以雷達與採購文件為意象的應用程式圖示</desc>
+  <defs>
+    <linearGradient id="background" x1="72" y1="42" x2="448" y2="474" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#23855f"/>
+      <stop offset="1" stop-color="#0d4433"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="172" y1="118" x2="345" y2="391" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffef7"/>
+      <stop offset="1" stop-color="#dff2df"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#background)"/>
+  <circle cx="124" cy="117" r="150" fill="#8bd09a" opacity=".15"/>
+  <circle cx="388" cy="424" r="187" fill="#041f18" opacity=".18"/>
+  <path d="M113 308a150 150 0 0 1 255-105" fill="none" stroke="#9bd6a4" stroke-linecap="round" stroke-width="16" opacity=".55"/>
+  <path d="M113 360a203 203 0 0 1 299-188" fill="none" stroke="#9bd6a4" stroke-linecap="round" stroke-width="10" opacity=".32"/>
+  <path d="M258 104v80M178 136l56 56M338 136l-56 56" fill="none" stroke="#9bd6a4" stroke-linecap="round" stroke-width="13" opacity=".72"/>
+  <path d="M171 147c0-20 16-36 36-36h104l60 60v192c0 21-16 38-37 38H207c-20 0-36-17-36-38V147Z" fill="url(#paper)"/>
+  <path d="M311 111v60h60" fill="#b9dfbd"/>
+  <path d="M228 219h92M228 263h92M228 307h54" fill="none" stroke="#176b4b" stroke-linecap="round" stroke-width="20"/>
+  <circle cx="316" cy="309" r="44" fill="#176b4b"/>
+  <path d="m297 310 13 13 25-30" fill="none" stroke="#fffef7" stroke-linecap="round" stroke-linejoin="round" stroke-width="13"/>
+</svg>

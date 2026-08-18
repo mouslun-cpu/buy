@@ -33,6 +33,11 @@ interface TenderRecord {
   statusNote: string;
 }
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 function formatMoney(value: number | null) {
   return value === null ? "未公開" : `NT$ ${value.toLocaleString("zh-TW")}`;
 }
@@ -49,8 +54,27 @@ export default function Home() {
   const [selected, setSelected] = useState<TenderRecord | null>(null);
   const [note, setNote] = useState("");
   const [loadError, setLoadError] = useState("");
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
+
+  useEffect(() => {
+    const deferredInstall = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    setIsStandalone(standalone);
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
+    window.addEventListener("beforeinstallprompt", deferredInstall);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+
+    return () => window.removeEventListener("beforeinstallprompt", deferredInstall);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -91,6 +115,16 @@ export default function Home() {
     setSelected(null);
   }
 
+  async function installApp() {
+    if (!installPrompt) {
+      setShowInstallHelp(true);
+      return;
+    }
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  }
+
   if (!user) {
     return (
       <main className="login-shell">
@@ -108,9 +142,11 @@ export default function Home() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div className="brand"><span>BB</span><div><strong>BuyBuyBuy</strong><small>政府標案工作台</small></div></div>
-        <div className="account"><span>{user.email}</span><button onClick={() => signOut(auth)}>登出</button></div>
+        <div className="brand"><img src="/app-icon.svg" alt="BuyBuyBuy" /><div><strong>BuyBuyBuy</strong><small>政府標案工作台</small></div></div>
+        <div className="account">{!isStandalone && (installPrompt || isIOS) && <button className="install-button" onClick={installApp}>加入主畫面</button>}<span>{user.email}</span><button onClick={() => signOut(auth)}>登出</button></div>
       </header>
+
+      {showInstallHelp && <div className="install-help"><strong>加入 BuyBuyBuy</strong><span>{isIOS ? "請按 Safari 的分享按鈕，選擇「加入主畫面」。" : "請使用 Chrome 或 Edge 開啟此網址，並從瀏覽器選單選擇「安裝應用程式」。"}</span><button onClick={() => setShowInstallHelp(false)} aria-label="關閉加入主畫面說明">×</button></div>}
 
       <section className="hero">
         <div><p className="eyebrow">標案雷達</p><h1>推播不是終點，決策才是。</h1><p>集中查看每一筆新案，留下投與不投的理由。</p></div>
