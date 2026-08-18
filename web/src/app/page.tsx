@@ -133,6 +133,8 @@ export default function Home() {
           <h1>政府標案工作台</h1>
           <p>把 LINE 推播變成可追蹤、可決策的案件清單。</p>
           <button className="primary-button" onClick={() => signInWithPopup(auth, new GoogleAuthProvider())}>使用 Google 登入</button>
+          {!isStandalone && (installPrompt || isIOS) && <button className="login-install-button" onClick={installApp}>加入主畫面</button>}
+          {showInstallHelp && <div className="login-install-help">{isIOS ? "請按 Safari 的分享按鈕，選擇「加入主畫面」。" : "請使用 Chrome 或 Edge 開啟此網址，並從瀏覽器選單選擇「安裝應用程式」。"}</div>}
           <small>請以已獲授權的 Google 帳號登入。</small>
         </section>
       </main>
