@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "tanchi-28b04"
+  },
+  "targets": {
+    "tanchi-28b04": {
+      "hosting": {
+        "tanchi-28b04-10e4c": ["tanchi-28b04-10e4c"]
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "gov-tender-radar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "政府標案投標輔助系統 — 標案雷達 + 案件資料庫 + 投標決策分析",
+  "workspaces": [
+    "shared",
+    "web",
+    "worker"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace web",
+    "build:web": "npm run build --workspace web",
+    "build:shared": "npm run build --workspace shared",
+    "dev:worker": "npm run dev --workspace worker",
+    "build:worker": "npm run build --workspace worker",
+    "scrape:once": "npm run scrape:once --workspace worker"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

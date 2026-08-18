@@ -1,0 +1,31 @@
+# deps
+node_modules/
+*/node_modules/
+
+# build output
+web/.next/
+web/out/
+shared/dist/
+worker/dist/
+*.tsbuildinfo
+
+# env — 真正的密鑰絕不進版控
+.env
+.env.local
+.env*.local
+worker/.env
+web/.env.local
+
+# firebase service account 金鑰
+**/serviceAccount*.json
+**/firebase-adminsdk*.json
+
+# 爬蟲快取與原始頁面存檔
+worker/.cache/
+worker/snapshots/
+
+# logs / misc
+*.log
+*.bak.*
+.DS_Store
+.firebase/
