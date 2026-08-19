@@ -6,7 +6,7 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 const TENDER_SEARCH_URL =
   "https://web.pcc.gov.tw/prkms/tender/common/basic/readTenderBasic";
-const ORGANIZATION = "中華郵政股份有限公司";
+const ORGANIZATIONS = ["中華郵政股份有限公司", "台灣電力股份有限公司"];
 
 interface TenderSummary {
   title: string;
@@ -46,14 +46,14 @@ async function database() {
   return getFirestore();
 }
 
-async function fetchTodayServiceTenders(): Promise<TenderSummary[]> {
+async function fetchTodayServiceTenders(organization: string): Promise<TenderSummary[]> {
   const date = today().replaceAll("-", "/");
   const body = new URLSearchParams({
     firstSearch: "false",
     searchType: "basic",
     isBinding: "N",
     isLogIn: "N",
-    orgName: ORGANIZATION,
+    orgName: organization,
     orgId: "",
     tenderName: "",
     tenderId: "",
@@ -118,8 +118,8 @@ async function fetchTodayServiceTenders(): Promise<TenderSummary[]> {
     }));
 }
 
-function formatLineMessage(tenders: TenderSummary[]) {
-  const heading = `${today()}\n${ORGANIZATION}`;
+function formatLineMessage(organization: string, tenders: TenderSummary[]) {
+  const heading = `${today()}\n${organization}`;
   if (tenders.length === 0) {
     return `${heading}\n\n今日無符合條件的標案。`;
   }
@@ -185,11 +185,15 @@ async function pushLineMessage(message: string) {
   }
 }
 
-const tenders = await fetchTodayServiceTenders();
-const newTenders = await saveTenders(tenders);
+let pushedCount = 0;
 
-if (newTenders.length > 0) {
-  const message = formatLineMessage(newTenders);
+for (const organization of ORGANIZATIONS) {
+  const tenders = await fetchTodayServiceTenders(organization);
+  const newTenders = await saveTenders(tenders);
+
+  if (newTenders.length === 0) continue;
+
+  const message = formatLineMessage(organization, newTenders);
   await pushLineMessage(message);
   await (await database()).collection("notifications").add({
     tenderIds: newTenders.map((tender) => tender.id),
@@ -198,8 +202,11 @@ if (newTenders.length > 0) {
     sentAt: FieldValue.serverTimestamp(),
     ok: true,
   });
-  console.log(`已推播 ${newTenders.length} 筆新標案。`);
+  pushedCount += newTenders.length;
+  console.log(`已推播 ${organization} ${newTenders.length} 筆新標案。`);
   console.log(message);
-} else {
+}
+
+if (pushedCount === 0) {
   console.log("沒有新標案，未發送 LINE 訊息。");
 }
