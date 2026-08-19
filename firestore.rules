@@ -2,13 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedInUser() {
-      return request.auth != null
-        && request.auth.token.email_verified == true;
-    }
-
     match /tenders/{tenderId} {
-      allow read, update, delete: if signedInUser();
+      allow read, update, delete: if true;
     }
 
     match /notifications/{notificationId} {
