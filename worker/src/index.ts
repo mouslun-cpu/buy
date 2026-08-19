@@ -21,7 +21,12 @@ interface TenderSummary {
 
 function extractTenderTitle(cellHtml: string) {
   const match = cellHtml.match(/pageCode2Img\("((?:\\.|[^"\\])*)"\)/);
-  return match ? JSON.parse(`"${match[1]}"`) : "";
+  if (!match) return "";
+
+  const value = match[1].replace(/[\u0000-\u001F]/g, (character) =>
+    `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+  return JSON.parse(`"${value}"`);
 }
 
 function today() {
