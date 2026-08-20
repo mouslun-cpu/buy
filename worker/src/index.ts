@@ -11,6 +11,8 @@ const SEARCH_CONDITIONS = [
   { organization: "中華郵政股份有限公司", tenderName: "分揀" },
   { organization: "台灣電力股份有限公司", tenderName: "清潔" },
   { organization: "台灣電力股份有限公司", tenderName: "通知" },
+  { organization: "法務部", tenderName: "掃描" },
+  { organization: "法院", tenderName: "掃描" },
 ];
 
 interface TenderSummary {
