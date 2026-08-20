@@ -6,7 +6,12 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 const TENDER_SEARCH_URL =
   "https://web.pcc.gov.tw/prkms/tender/common/basic/readTenderBasic";
-const ORGANIZATIONS = ["中華郵政股份有限公司", "台灣電力股份有限公司"];
+const SEARCH_CONDITIONS = [
+  { organization: "中華郵政股份有限公司", tenderName: "清潔" },
+  { organization: "中華郵政股份有限公司", tenderName: "分揀" },
+  { organization: "台灣電力股份有限公司", tenderName: "清潔" },
+  { organization: "台灣電力股份有限公司", tenderName: "通知" },
+];
 
 interface TenderSummary {
   title: string;
@@ -51,7 +56,7 @@ async function database() {
   return getFirestore();
 }
 
-async function fetchTodayServiceTenders(organization: string): Promise<TenderSummary[]> {
+async function fetchTodayServiceTenders({ organization, tenderName }: (typeof SEARCH_CONDITIONS)[number]): Promise<TenderSummary[]> {
   const date = today().replaceAll("-", "/");
   const body = new URLSearchParams({
     firstSearch: "false",
@@ -60,7 +65,7 @@ async function fetchTodayServiceTenders(organization: string): Promise<TenderSum
     isLogIn: "N",
     orgName: organization,
     orgId: "",
-    tenderName: "",
+    tenderName,
     tenderId: "",
     tenderType: "TENDER_DECLARATION",
     tenderWay: "TENDER_WAY_ALL_DECLARATION",
@@ -109,7 +114,7 @@ async function fetchTodayServiceTenders(organization: string): Promise<TenderSum
       };
     })
     .filter(({ title, category, budget, url }) =>
-      Boolean(title && category === "勞務類" && Number.isFinite(budget) && url),
+      Boolean(title.includes(tenderName) && category === "勞務類" && Number.isFinite(budget) && url),
     )
     .map(({ title, budget, url, jobNumber, orgName, publishedAt, deadline, tenderWay }) => ({
       title,
@@ -192,13 +197,13 @@ async function pushLineMessage(message: string) {
 
 let pushedCount = 0;
 
-for (const organization of ORGANIZATIONS) {
-  const tenders = await fetchTodayServiceTenders(organization);
+for (const condition of SEARCH_CONDITIONS) {
+  const tenders = await fetchTodayServiceTenders(condition);
   const newTenders = await saveTenders(tenders);
 
   if (newTenders.length === 0) continue;
 
-  const message = formatLineMessage(organization, newTenders);
+  const message = formatLineMessage(condition.organization, newTenders);
   await pushLineMessage(message);
   await (await database()).collection("notifications").add({
     tenderIds: newTenders.map((tender) => tender.id),
@@ -208,7 +213,7 @@ for (const organization of ORGANIZATIONS) {
     ok: true,
   });
   pushedCount += newTenders.length;
-  console.log(`已推播 ${organization} ${newTenders.length} 筆新標案。`);
+  console.log(`已推播 ${condition.organization}／${condition.tenderName} ${newTenders.length} 筆新標案。`);
   console.log(message);
 }
 
